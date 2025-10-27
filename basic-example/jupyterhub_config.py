@@ -32,11 +32,22 @@ c.DockerSpawner.notebook_dir = notebook_dir
 # notebook directory in the container
 c.DockerSpawner.volumes = {"jupyterhub-user-{username}": notebook_dir}
 
-# Remove containers once they are stopped
-c.DockerSpawner.remove = True
+# Keep containers after they stop (temporarily for debugging)
+# This lets us inspect logs if the server crashes during start
+c.DockerSpawner.remove = False
 
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
+
+# Increase the time allowed for a single-user server to start
+# First-time image pulls can take a while; allow override via env var
+start_timeout = int(os.environ.get("SPAWNER_START_TIMEOUT", "600"))
+c.Spawner.start_timeout = start_timeout
+
+# Allow more time for the Hub to connect to the single-user server
+# after it reports ready (default is ~30s)
+http_timeout = int(os.environ.get("SPAWNER_HTTP_TIMEOUT", "300"))
+c.Spawner.http_timeout = http_timeout
 
 # User containers will access hub by container name on the Docker network
 c.JupyterHub.hub_ip = "jupyterhub"
