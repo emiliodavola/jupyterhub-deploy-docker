@@ -34,10 +34,42 @@ c.DockerSpawner.volumes = {"jupyterhub-user-{username}": notebook_dir}
 
 # Keep containers after they stop (temporarily for debugging)
 # This lets us inspect logs if the server crashes during start
-c.DockerSpawner.remove = False
+c.DockerSpawner.remove = True
 
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
+
+# A mapping of friendly names to Docker images that users are allowed to spawn.
+# The keys are the human-readable names shown in the spawn form, and the
+# values are the actual image names that DockerSpawner will pull and run.
+c.DockerSpawner.allowed_images = {
+    "Jupyter base": "jupyter/base-notebook:latest",
+    "Jupyter PySpark": "jupyter/pyspark-notebook:latest",
+    "Jupyter DS": "jupyter/datascience-notebook:latest",
+}
+
+# HTML form presented to users on the spawn page. The <select> values must match
+# the keys of `c.DockerSpawner.allowed_images` so that the spawner can map the
+# user's selection to an allowed image.
+c.DockerSpawner.options_form = """
+<label for="image">Select Docker image to spawn:</label>
+<select name="image" required>
+    <option value="Jupyter base">Jupyter base</option>
+    <option value="Jupyter PySpark">Jupyter PySpark</option>
+    <option value="Jupyter DS">Jupyter DS</option>
+</select>
+"""
+
+
+def options_from_form(formdata):
+    # Translate the submitted form value into the dict expected by DockerSpawner.
+    # The form submits the friendly key (e.g. "Jupyter base"); return it as the
+    # `image` user option so DockerSpawner can look up the actual image.
+    selected_key = formdata.get("image", ["Jupyter base"])[0]
+    return {"image": selected_key}
+
+
+c.DockerSpawner.options_from_form = options_from_form
 
 # Increase the time allowed for a single-user server to start
 # First-time image pulls can take a while; allow override via env var
